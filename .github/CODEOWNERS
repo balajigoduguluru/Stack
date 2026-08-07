@@ -1,0 +1,15 @@
+# These owners will be the default owners for everything in the repo
+*       @techlead
+
+# Frontend App (Next.js)
+/apps/web/               @frontend-team
+
+# Core Backend (NestJS)
+/apps/api-core/          @backend-team
+
+# AI Service (FastAPI)
+/apps/api-ai/            @ai-team
+
+# Infrastructure & CI/CD
+/infra/                  @devops-team
+/.github/workflows/      @devops-team
