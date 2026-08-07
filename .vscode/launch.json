@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Next.js (Web)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm --filter web dev"
+    },
+    {
+      "name": "Debug NestJS (API)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm --filter api-core dev"
+    }
+  ]
+}
