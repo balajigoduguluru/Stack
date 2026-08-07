@@ -1,0 +1,18 @@
+name: CD
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [] # In a real scenario, this would depend on a successful CI run
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Mock Deployment Step
+        run: echo "Deploying to AWS EKS via Terraform and Helm..."
