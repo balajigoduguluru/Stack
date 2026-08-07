@@ -1,18 +1,18 @@
-# Stack 2.0 Enterprise
+# Stack 2.0
 
-Welcome to the Stack 2.0 monorepo. This repository contains the source code for the Stack Learning Management System (LMS) Copilot.
+An enterprise-grade, Polyglot Monorepo built for extreme scale and resilience.
 
-## Architecture
-This is a polyglot Turborepo containing:
-- **Next.js (React)**: Frontend Web Application
-- **NestJS (Node.js)**: Core CRUD API
-- **FastAPI (Python)**: AI & Vector Processing Service
+## Features
+- **Frontend**: Next.js 15 (App Router) + Tailwind CSS + shadcn/ui
+- **Backend (Core)**: NestJS (TypeScript)
+- **Backend (AI)**: FastAPI (Python)
+- **Database**: PostgreSQL 16 via Drizzle ORM
+- **Auth**: NextAuth.js v5 (SSO ready)
+- **Infrastructure**: AWS EKS, RDS, Elasticache (Redis) via Terraform
+- **Monorepo Tooling**: Turborepo, pnpm workspaces
 
-## Prerequisites
-- Node.js >= 20.x
-- Python >= 3.11
-- pnpm >= 8.x
-- Docker
-
-## Getting Started
-Please refer to the internal Engineering Handbook for local setup, environment variables, and deployment procedures.
+## Quickstart (Development)
+1. `pnpm install`
+2. `./scripts/setup-dev.sh` (Boots local Postgres & Redis)
+3. `pnpm db:generate && pnpm db:push`
+4. `pnpm dev` (Starts all services)
