@@ -1,0 +1,6 @@
+{
+  "name": "@stack/prettier",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.json"
+}

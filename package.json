@@ -15,7 +15,13 @@
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
-    "turbo": "^1.13.0"
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "@typescript-eslint/eslint-plugin": "^8.66.0",
+    "@typescript-eslint/parser": "^8.66.0",
+    "eslint": "^10.8.0",
+    "prettier": "^3.9.6",
+    "turbo": "^1.13.0",
+    "typescript": "^7.0.2"
   },
   "packageManager": "pnpm@9.0.0"
 }
