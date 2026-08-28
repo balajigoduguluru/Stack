@@ -6,9 +6,9 @@ export class AppController {
   constructor() {}
 
   @Get('health')
-  async getHealth() {
+  async getHealth(): Promise<{ status: string; dbConnected: boolean }> {
     // Quick DB ping to verify @stack/db works from the NestJS app
-    const users = await db.query.users.findMany({ limit: 1 });
+    await db.query.users.findMany({ limit: 1 });
     return { status: 'ok', dbConnected: true };
   }
 }

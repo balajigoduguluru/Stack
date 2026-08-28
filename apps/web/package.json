@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --fix",
     "test": "vitest run"
   },
   "dependencies": {
@@ -15,7 +15,8 @@
     "@stack/ui": "workspace:*",
     "next": "15.0.0-rc.0",
     "react": "19.0.0-rc-f994737d14-20240522",
-    "react-dom": "19.0.0-rc-f994737d14-20240522"
+    "react-dom": "19.0.0-rc-f994737d14-20240522",
+    "swr": "^2.5.0"
   },
   "devDependencies": {
     "@stack/eslint-config": "workspace:*",

@@ -1,131 +1,265 @@
-import Link from "next/link";
+"use client";
+
+import useSWR from 'swr';
+import { useState } from 'react';
+import { FlashcardModal } from '../../components/FlashcardModal';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export default function DashboardOverview() {
-  // Mock Dynamic Data
-  const today = new Date();
-  const dateString = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const [selectedNote, setSelectedNote] = useState<{ id: string, title: string } | null>(null);
   
-  const upcomingAssignments = [
-    { id: 1, title: "Calculus III Midterm", course: "MATH 231", dueDate: "Tomorrow, 10:00 AM", type: "Exam" },
-    { id: 2, title: "Psychology Essay", course: "PSYC 101", dueDate: "In 3 days", type: "Paper" },
-    { id: 3, title: "Physics Lab Report", course: "PHYS 202", dueDate: "Next week", type: "Homework" },
+  const { data: user } = useSWR(`${API_URL}/users/me`, fetcher, {
+    fallbackData: { name: 'Student User', email: 'user@university.edu' }
+  });
+  const { data: tasks = [], mutate: mutateTasks } = useSWR(`${API_URL}/tasks`, fetcher);
+  const { data: notes = [] } = useSWR(`${API_URL}/notes`, fetcher);
+
+  const upcomingAssignments = Array.isArray(tasks) && tasks.length > 0 ? tasks : [
+    { id: 't-1', title: "Read 2 chapter books", isCompleted: true },
+    { id: 't-2', title: "Complete Algorithms Assignment", isCompleted: false },
+    { id: 't-3', title: "Physics Lab Report", isCompleted: false },
+    { id: 't-4', title: "Psychology Essay Draft", isCompleted: false },
   ];
 
-  const recentNotes = [
-    { id: 1, title: "Derivatives & Integrals", course: "MATH 231", time: "2 hours ago" },
-    { id: 2, title: "Cognitive Development", course: "PSYC 101", time: "Yesterday" },
+  const recentNotes = Array.isArray(notes) && notes.length > 0 ? notes : [
+    { id: 'n-1', title: "Derivatives & Integrals", summary: "Calculus notes on differential equations" },
+    { id: 'n-2', title: "Cognitive Development", summary: "Psychology notes on stages of learning" },
   ];
+
+  const totalNotes = Array.isArray(notes) ? notes.length : 24;
+  const totalTasks = Array.isArray(tasks) ? tasks.length : 12;
+  const inProgressTasks = Array.isArray(tasks) ? tasks.filter((t: any) => !t.isCompleted).length : 3;
+  const completedTasks = Array.isArray(tasks) ? tasks.filter((t: any) => t.isCompleted).length : 9;
+
+  const handleToggleTask = async (id: string | number, currentStatus: boolean) => {
+    mutateTasks(
+      Array.isArray(tasks)
+        ? tasks.map((t: any) => t.id === id ? { ...t, isCompleted: !currentStatus } : t)
+        : [],
+      false
+    );
+    
+    try {
+      await fetch(`${API_URL}/tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isCompleted: !currentStatus }),
+      });
+      mutateTasks();
+    } catch (e) {
+      console.error("Failed to toggle task", e);
+    }
+  };
 
   return (
-    <div className="space-y-6 animate-fade-in-up [animation-delay:100ms] opacity-0 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Overview</h1>
-          <p className="text-gray-500 font-medium mt-1">{dateString}</p>
-        </div>
-        <button className="bg-black text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors shadow-sm active:scale-95 duration-200">
-          + New Note
-        </button>
+    <div className="max-w-[1200px] mx-auto animate-fade-in-up [animation-delay:100ms] opacity-0 pb-12">
+      {/* Header Banner */}
+      <div className="mb-8">
+        <h1 className="text-[32px] font-bold text-[#1D1D1F] tracking-tight">
+          Welcome back, <span className="text-[#5C6BC0]">{user?.name || "Student"}</span> 👋
+        </h1>
+        <p className="text-[#1D1D1F]/60 text-[15px] font-medium">
+          Here is your dynamic study overview & academic progress.
+        </p>
       </div>
       
-      {/* Bento Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+      {/* Top Row: Main Stats Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         
-        {/* Main Stats - Span 8 cols */}
-        <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {/* Study Hours Card */}
-          <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300 col-span-1 sm:col-span-2 flex flex-col justify-between relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl group-hover:bg-blue-500/10 transition-colors"></div>
+        {/* Card 1: Study Stats */}
+        <div className="bg-[#5C6BC0] text-white rounded-[32px] p-7 shadow-lg shadow-[#5C6BC0]/20 flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-8">
+            <h3 className="text-[17px] font-semibold text-white/90">Study Statistics</h3>
+            <span className="text-xs bg-white/20 px-2.5 py-1 rounded-full text-white font-medium">Live</span>
+          </div>
+          
+          <div className="flex items-end gap-6 mb-8">
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 mb-1">Weekly Goal</h3>
-              <div className="flex items-end gap-3 mb-6">
-                <span className="text-4xl font-bold text-gray-900 tracking-tight">12.5<span className="text-lg text-gray-400 font-medium ml-1">/ 20 hrs</span></span>
+              <p className="text-[52px] font-medium leading-none tracking-tight">{totalNotes}</p>
+              <p className="text-[13px] text-white/70 mt-1 max-w-[80px] leading-tight">Total Notes</p>
+            </div>
+            <div>
+              <p className="text-[52px] font-medium leading-none tracking-tight">{inProgressTasks}</p>
+              <p className="text-[13px] text-white/70 mt-1 max-w-[80px] leading-tight">Pending Tasks</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white/10 rounded-2xl p-4 flex flex-col items-center justify-center gap-2">
+              <div className="w-5 h-5 rounded-full border-[3px] border-white/80 flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-white/80 rounded-full"></div>
+              </div>
+              <div className="text-center">
+                <p className="text-[17px] font-semibold leading-none">{totalTasks}</p>
+                <p className="text-[10px] text-white/70 mt-1">Assignments</p>
               </div>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-3 mb-2 overflow-hidden">
-              <div className="bg-black h-3 rounded-full transition-all duration-1000 ease-out" style={{ width: '62%' }}></div>
+            <div className="bg-white/10 rounded-2xl p-4 flex flex-col items-center justify-center gap-2">
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-white/80" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="text-center">
+                <p className="text-[17px] font-semibold leading-none">{inProgressTasks}</p>
+                <p className="text-[10px] text-white/70 mt-1">In Progress</p>
+              </div>
             </div>
-            <p className="text-xs text-gray-500 font-medium text-right">62% Completed</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 rounded-[24px] shadow-sm text-white flex flex-col justify-between">
-            <h3 className="text-sm font-medium text-white/80 mb-2">Current GPA</h3>
-            <p className="text-4xl font-bold tracking-tight">3.84</p>
-            <p className="text-xs text-white/70 mt-4">+0.02 from last semester</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between">
-            <h3 className="text-sm font-semibold text-gray-500 mb-2">Total Notes</h3>
-            <p className="text-4xl font-bold text-gray-900 tracking-tight">24</p>
-            <Link href="#" className="text-xs text-blue-600 font-medium hover:underline mt-4 inline-block">View all notes &rarr;</Link>
+            <div className="bg-white text-[#5C6BC0] rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-sm">
+              <svg width="20" height="20" fill="currentColor" className="text-[#5C6BC0]" viewBox="0 0 24 24">
+                <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1.177-7.86l-2.765-2.764-1.414 1.414 4.179 4.179 5.836-5.836-1.414-1.414-4.422 4.422z"/>
+              </svg>
+              <div className="text-center">
+                <p className="text-[17px] font-semibold leading-none">{completedTasks}</p>
+                <p className="text-[10px] text-[#5C6BC0]/80 mt-1">Completed</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Side Panel - Span 4 cols */}
-        <div className="md:col-span-4 space-y-6">
-          {/* Upcoming Assignments */}
-          <div className="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm h-full">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-bold text-gray-900 tracking-tight">Upcoming</h3>
-              <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded-md">{upcomingAssignments.length}</span>
+        {/* Card 2: Weekly Progress */}
+        <div className="bg-white rounded-[32px] p-7 shadow-sm border border-gray-100 flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h3 className="text-[17px] font-semibold text-gray-900">Weekly Goal</h3>
+              <div className="flex gap-4 mt-2">
+                <span className="text-[13px] font-medium text-gray-600 flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-[#26A69A] rounded-full"></span> Hours</span>
+                <span className="text-[13px] font-medium text-gray-400 flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span> Focus</span>
+              </div>
+            </div>
+            <div className="bg-[#26A69A]/10 text-[#26A69A] text-[10px] font-bold px-2.5 py-1.5 rounded-lg">+24%</div>
+          </div>
+          
+          <div className="flex-1 flex items-center justify-center relative w-full h-[120px]">
+            <svg width="100%" height="100%" viewBox="0 0 300 120" preserveAspectRatio="none">
+              <path d="M0,100 C40,80 60,110 100,70 C140,30 160,80 200,60 C240,40 260,20 300,40" fill="none" stroke="#E5E5E5" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M0,80 C40,90 60,70 100,50 C140,30 160,90 200,40 C240,-10 260,20 300,10" fill="none" stroke="#26A69A" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          
+          <div className="flex justify-between items-center text-[11px] font-bold text-gray-500 mt-4 px-2">
+            <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span>
+            <span className="bg-[#26A69A] text-white w-5 h-5 flex items-center justify-center rounded-full shadow-sm shadow-[#26A69A]/30">S</span>
+            <span>S</span>
+          </div>
+        </div>
+
+        {/* Card 3: GPA Progress */}
+        <div className="bg-white rounded-[32px] p-7 shadow-sm border border-gray-100 flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h3 className="text-[17px] font-semibold text-gray-900">Current GPA</h3>
+              <p className="text-[12px] font-semibold text-gray-900 mt-1"><span className="text-[#FF7043] font-bold">+0.02</span> target growth</p>
+            </div>
+            <button className="text-gray-400 hover:text-[#FF7043] transition-colors">
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
+            </button>
+          </div>
+          
+          <div className="flex items-center justify-between mb-4">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-[#FF7043] rounded-full"></span>
+                <span className="text-[13px] font-medium text-gray-600">Major</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
+                <span className="text-[13px] font-medium text-gray-600">Electives</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-gray-200 rounded-full"></span>
+                <span className="text-[13px] font-medium text-gray-600">Gen Ed</span>
+              </div>
             </div>
             
-            <div className="space-y-4">
-              {upcomingAssignments.map((assignment) => (
-                <div key={assignment.id} className="group p-3 -mx-3 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer">
-                  <div className="flex justify-between items-start mb-1">
-                    <p className="font-semibold text-gray-900 text-sm group-hover:text-blue-600 transition-colors">{assignment.title}</p>
-                  </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-500 font-medium">{assignment.course}</span>
-                    <span className={`font-medium ${assignment.dueDate.includes('Tomorrow') ? 'text-orange-500' : 'text-gray-400'}`}>
-                      {assignment.dueDate}
-                    </span>
-                  </div>
-                </div>
-              ))}
+            <div className="relative w-[110px] h-[110px]">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#F3F3F3" strokeWidth="8" />
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#FF7043" strokeWidth="8" strokeLinecap="round" strokeDasharray="251" strokeDashoffset="40" />
+                <circle cx="50" cy="50" r="32" fill="none" stroke="#E5E5E5" strokeWidth="1.5" />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center flex-col">
+                <span className="text-[22px] font-bold text-gray-900 tracking-tight">3.84</span>
+              </div>
             </div>
-            
-            <button className="w-full mt-6 py-2 border-2 border-dashed border-gray-200 rounded-xl text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700 transition-colors">
-              + Add Assignment
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <button className="flex-1 h-11 rounded-full border border-[#FF7043]/30 text-[#FF7043] bg-[#FF7043]/5 hover:bg-[#FF7043]/10 text-[13px] font-bold flex items-center justify-center gap-2 transition-colors">
+              Calculate Academic CGPA
             </button>
           </div>
         </div>
+
       </div>
-      
-      {/* Bottom Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-6">
-          <h2 className="text-lg font-bold text-gray-900 tracking-tight mb-6">Recent Notes</h2>
-          <div className="space-y-3">
-            {recentNotes.map((note) => (
-              <div key={note.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:border-gray-300 transition-colors cursor-pointer group">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center group-hover:bg-blue-50 transition-colors">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400 group-hover:text-blue-500" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">{note.title}</p>
-                    <p className="text-xs text-gray-500 font-medium">{note.course}</p>
-                  </div>
-                </div>
-                <span className="text-xs text-gray-400 font-medium">{note.time}</span>
+
+      {/* Middle Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        
+        {/* Checklist Card */}
+        <div className="lg:col-span-4 bg-white rounded-[32px] p-7 shadow-sm border border-gray-100 min-h-[280px]">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-[17px] font-semibold text-gray-900">Task Checklist:</h3>
+            <span className="text-[11px] font-bold text-[#26A69A] bg-[#26A69A]/10 rounded-full py-1 px-3">
+              {completedTasks}/{totalTasks}
+            </span>
+          </div>
+          
+          <div className="space-y-4">
+            {upcomingAssignments.slice(0, 4).map((task: any) => (
+              <div key={task.id} className="flex items-center gap-3">
+                <button 
+                  onClick={() => handleToggleTask(task.id, !!task.isCompleted)}
+                  className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors ${task.isCompleted ? 'bg-[#26A69A] text-white shadow-sm shadow-[#26A69A]/20' : 'border-[2px] border-gray-200 hover:border-[#26A69A]/50'}`}>
+                  {task.isCompleted && <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                </button>
+                <span className={`text-[14px] font-medium transition-colors ${task.isCompleted ? 'text-gray-900 line-through decoration-gray-300' : 'text-gray-900'}`}>{task.title}</span>
               </div>
             ))}
           </div>
         </div>
-        
-        <div className="bg-gray-900 rounded-[24px] shadow-sm p-6 text-white relative overflow-hidden flex flex-col justify-center items-start">
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-purple-500/20 blur-3xl rounded-full pointer-events-none"></div>
-          <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-blue-500/20 blur-3xl rounded-full pointer-events-none"></div>
-          <h2 className="text-2xl font-bold tracking-tight mb-2 relative z-10">Upload Syllabus</h2>
-          <p className="text-gray-400 font-medium text-sm mb-6 max-w-sm relative z-10">Drop your PDF syllabus here. Our AI will automatically extract all your deadlines and populate your calendar.</p>
-          <button className="bg-white text-gray-900 px-6 py-2.5 rounded-full text-sm font-bold shadow-sm hover:bg-gray-100 transition-colors relative z-10">
-            Browse Files
-          </button>
+
+        {/* Task In Process Grid */}
+        <div className="lg:col-span-8 flex flex-col">
+          <div className="flex justify-between items-center mb-4 px-1">
+            <h3 className="text-[17px] font-semibold text-gray-900">Active Study Notes</h3>
+          </div>
+          
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {recentNotes.slice(0, 2).map((note: any, idx: number) => {
+              const isTeal = idx % 2 === 1;
+              return (
+                <div key={note.id} className={`bg-white rounded-[28px] p-6 shadow-sm border border-gray-100 flex flex-col justify-between relative group hover:shadow-md transition-all ${isTeal ? 'hover:border-[#26A69A]/20' : 'hover:border-[#5C6BC0]/20'}`}>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${isTeal ? 'bg-[#26A69A]/10 text-[#26A69A]' : 'bg-[#5C6BC0]/10 text-[#5C6BC0]'}`}>
+                      <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    </div>
+                  </div>
+                  <p className="text-[16px] font-semibold text-gray-900 leading-tight mb-2">
+                    {note.title}
+                  </p>
+                  <p className="text-[12px] text-gray-500 line-clamp-2 mb-4">{note.summary || note.content}</p>
+                  <div className="flex justify-between items-center mt-2">
+                    <button 
+                      onClick={() => setSelectedNote({ id: note.id, title: note.title })}
+                      className={`w-full h-9 rounded-xl flex items-center justify-center font-bold text-[13px] transition-all shadow-sm ${isTeal ? 'bg-[#26A69A] text-white hover:bg-[#1f877d]' : 'bg-[#5C6BC0] text-white hover:bg-[#4A59A7]'}`}>
+                      Study Active Recall →
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
+
+      {selectedNote && (
+        <FlashcardModal 
+          noteId={selectedNote.id} 
+          noteTitle={selectedNote.title} 
+          onClose={() => setSelectedNote(null)} 
+        />
+      )}
     </div>
   );
 }
